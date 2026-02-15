@@ -1,0 +1,6 @@
+@DiveUp_HostAddress = http://localhost:5272
+
+GET {{DiveUp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
