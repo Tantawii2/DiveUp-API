@@ -21,8 +21,14 @@ namespace DiveUp
                             options.UseSqlServer(builder.Configuration.GetConnectionString("DiveUp")));*/
 
 
+            /*     builder.Services.AddDbContext<AppDbContext>(options =>
+                   options.UseNpgsql(builder.Configuration.GetConnectionString("DiveUp")));*/
+            var connStr =
+         builder.Configuration.GetConnectionString("DiveUp") ??
+         builder.Configuration["DATABASE_URL"];
+
             builder.Services.AddDbContext<AppDbContext>(options =>
-              options.UseNpgsql(builder.Configuration.GetConnectionString("DiveUp")));
+                options.UseNpgsql(connStr));
 
             var app = builder.Build();
 
