@@ -23,12 +23,26 @@ namespace DiveUp
 
             /*     builder.Services.AddDbContext<AppDbContext>(options =>
                    options.UseNpgsql(builder.Configuration.GetConnectionString("DiveUp")));*/
-            var connStr =
-         builder.Configuration.GetConnectionString("DiveUp") ??
-         builder.Configuration["DATABASE_URL"];
+            /*            var connStr =
+                     builder.Configuration.GetConnectionString("DiveUp") ??
+                     builder.Configuration["DATABASE_URL"];
+
+                        builder.Services.AddDbContext<AppDbContext>(options =>
+                            options.UseNpgsql(connStr));*/
+
+            var conn =
+    builder.Configuration.GetConnectionString("DiveUp")
+    ?? builder.Configuration["ConnectionStrings:DiveUp"]
+    ?? builder.Configuration["ConnectionStrings__DiveUp"]
+    ?? builder.Configuration["DATABASE_URL"];
+
+            if (string.IsNullOrWhiteSpace(conn))
+                throw new Exception("DB connection string is missing from Railway env.");
 
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(connStr));
+                options.UseNpgsql(conn));
+
+
 
             var app = builder.Build();
 
