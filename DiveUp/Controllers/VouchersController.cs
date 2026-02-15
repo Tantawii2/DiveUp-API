@@ -18,12 +18,23 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all vouchers</summary>
+        /// <summary>Get all vouchers - optional search by from, to, or rep name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<VoucherDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<VoucherDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Vouchers
-                .Include(v => v.Rep)
+            var query = _context.Vouchers.Include(v => v.Rep).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(v =>
+                    v.VoucherFrom.ToLower().Contains(s) ||
+                    v.VoucherTo.ToLower().Contains(s) ||
+                    (v.Rep != null && v.Rep.RepName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderByDescending(v => v.RecordTime)
                 .Select(v => new VoucherDto
                 {
@@ -45,10 +56,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<VoucherDto>> GetById(int id)
         {
-            var v = await _context.Vouchers
-                .Include(x => x.Rep)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var v = await _context.Vouchers.Include(x => x.Rep).FirstOrDefaultAsync(x => x.Id == id);
             if (v == null)
                 return NotFound(new { message = $"Voucher with ID {id} not found." });
 
@@ -80,10 +88,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<VoucherDto>> Update(int id, [FromBody] VoucherUpdateDto dto)
         {
-            var voucher = await _context.Vouchers
-                .Include(x => x.Rep)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var voucher = await _context.Vouchers.Include(x => x.Rep).FirstOrDefaultAsync(x => x.Id == id);
             if (voucher == null)
                 return NotFound(new { message = $"Voucher with ID {id} not found." });
 

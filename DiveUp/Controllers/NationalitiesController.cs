@@ -18,11 +18,19 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all nationalities</summary>
+        /// <summary>Get all nationalities - optional search by name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<NationalityDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<NationalityDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Nationalities
+            var query = _context.Nationalities.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(n => n.NationalityName.ToLower().Contains(s));
+            }
+
+            var list = await query
                 .OrderBy(n => n.NationalityName)
                 .Select(n => new NationalityDto
                 {

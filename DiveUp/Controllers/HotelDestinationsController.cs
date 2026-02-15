@@ -18,11 +18,19 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all hotel destinations</summary>
+        /// <summary>Get all hotel destinations - optional search by name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<HotelDestinationDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<HotelDestinationDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.HotelDestinations
+            var query = _context.HotelDestinations.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(d => d.DestinationName.ToLower().Contains(s));
+            }
+
+            var list = await query
                 .OrderBy(d => d.DestinationName)
                 .Select(d => new HotelDestinationDto
                 {

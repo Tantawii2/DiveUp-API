@@ -18,11 +18,23 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all guides</summary>
+        /// <summary>Get all guides - optional search by name, phone, or address</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GuideDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<GuideDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Guides
+            var query = _context.Guides.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(g =>
+                    g.GuideName.ToLower().Contains(s) ||
+                    (g.Phone != null && g.Phone.ToLower().Contains(s)) ||
+                    (g.Address != null && g.Address.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(g => g.GuideName)
                 .Select(g => new GuideDto
                 {

@@ -18,11 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all boats</summary>
+        /// <summary>Get all boats - optional search by name or status</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BoatDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<BoatDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Boats
+            var query = _context.Boats.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(b =>
+                    b.BoatName.ToLower().Contains(s) ||
+                    b.Status.ToLower().Contains(s)
+                );
+            }
+
+            var list = await query
                 .OrderBy(b => b.BoatName)
                 .Select(b => new BoatDto
                 {

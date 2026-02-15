@@ -18,12 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all hotels</summary>
+        /// <summary>Get all hotels - optional search by name or destination</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<HotelDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<HotelDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Hotels
-                .Include(h => h.Destination)
+            var query = _context.Hotels.Include(h => h.Destination).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(h =>
+                    h.HotelName.ToLower().Contains(s) ||
+                    (h.Destination != null && h.Destination.DestinationName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(h => h.HotelName)
                 .Select(h => new HotelDto
                 {
@@ -43,10 +53,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<HotelDto>> GetById(int id)
         {
-            var h = await _context.Hotels
-                .Include(x => x.Destination)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var h = await _context.Hotels.Include(x => x.Destination).FirstOrDefaultAsync(x => x.Id == id);
             if (h == null)
                 return NotFound(new { message = $"Hotel with ID {id} not found." });
 
@@ -76,10 +83,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<HotelDto>> Update(int id, [FromBody] HotelUpdateDto dto)
         {
-            var hotel = await _context.Hotels
-                .Include(x => x.Destination)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var hotel = await _context.Hotels.Include(x => x.Destination).FirstOrDefaultAsync(x => x.Id == id);
             if (hotel == null)
                 return NotFound(new { message = $"Hotel with ID {id} not found." });
 

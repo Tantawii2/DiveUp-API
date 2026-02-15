@@ -18,11 +18,19 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all price lists</summary>
+        /// <summary>Get all price lists - optional search by name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<PriceListDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<PriceListDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.PriceLists
+            var query = _context.PriceLists.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(p => p.PriceListName.ToLower().Contains(s));
+            }
+
+            var list = await query
                 .OrderBy(p => p.PriceListName)
                 .Select(p => new PriceListDto
                 {

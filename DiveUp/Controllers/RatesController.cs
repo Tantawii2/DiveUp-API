@@ -18,11 +18,19 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all rates</summary>
+        /// <summary>Get all rates - optional search by currency</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RateDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<RateDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Rates
+            var query = _context.Rates.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(r => r.Currency.ToLower().Contains(s));
+            }
+
+            var list = await query
                 .OrderByDescending(r => r.FromDate)
                 .Select(r => new RateDto
                 {

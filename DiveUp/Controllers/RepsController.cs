@@ -18,12 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all reps</summary>
+        /// <summary>Get all reps - optional search by name or agent name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RepDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<RepDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Reps
-                .Include(r => r.Agent)
+            var query = _context.Reps.Include(r => r.Agent).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(r =>
+                    r.RepName.ToLower().Contains(s) ||
+                    (r.Agent != null && r.Agent.AgentName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(r => r.RepName)
                 .Select(r => new RepDto
                 {
@@ -43,10 +53,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RepDto>> GetById(int id)
         {
-            var r = await _context.Reps
-                .Include(x => x.Agent)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var r = await _context.Reps.Include(x => x.Agent).FirstOrDefaultAsync(x => x.Id == id);
             if (r == null)
                 return NotFound(new { message = $"Rep with ID {id} not found." });
 
@@ -76,10 +83,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<RepDto>> Update(int id, [FromBody] RepUpdateDto dto)
         {
-            var rep = await _context.Reps
-                .Include(x => x.Agent)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var rep = await _context.Reps.Include(x => x.Agent).FirstOrDefaultAsync(x => x.Id == id);
             if (rep == null)
                 return NotFound(new { message = $"Rep with ID {id} not found." });
 

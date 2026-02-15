@@ -18,12 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all excursions</summary>
+        /// <summary>Get all excursions - optional search by name or supplier name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExcursionDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ExcursionDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Excursions
-                .Include(e => e.Supplier)
+            var query = _context.Excursions.Include(e => e.Supplier).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(e =>
+                    e.ExcursionName.ToLower().Contains(s) ||
+                    (e.Supplier != null && e.Supplier.SupplierName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(e => e.ExcursionName)
                 .Select(e => new ExcursionDto
                 {
@@ -43,10 +53,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ExcursionDto>> GetById(int id)
         {
-            var e = await _context.Excursions
-                .Include(x => x.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var e = await _context.Excursions.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
             if (e == null)
                 return NotFound(new { message = $"Excursion with ID {id} not found." });
 
@@ -76,10 +83,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ExcursionDto>> Update(int id, [FromBody] ExcursionUpdateDto dto)
         {
-            var excursion = await _context.Excursions
-                .Include(x => x.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var excursion = await _context.Excursions.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
             if (excursion == null)
                 return NotFound(new { message = $"Excursion with ID {id} not found." });
 

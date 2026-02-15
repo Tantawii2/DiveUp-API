@@ -18,12 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all transportation costs</summary>
+        /// <summary>Get all transportation costs - optional search by type name or currency</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TransportationCostDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<TransportationCostDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.TransportationCosts
-                .Include(tc => tc.Type)
+            var query = _context.TransportationCosts.Include(tc => tc.Type).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(tc =>
+                    tc.Currency.ToLower().Contains(s) ||
+                    (tc.Type != null && tc.Type.TypeName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderByDescending(tc => tc.RecordTime)
                 .Select(tc => new TransportationCostDto
                 {
@@ -46,10 +56,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TransportationCostDto>> GetById(int id)
         {
-            var tc = await _context.TransportationCosts
-                .Include(x => x.Type)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var tc = await _context.TransportationCosts.Include(x => x.Type).FirstOrDefaultAsync(x => x.Id == id);
             if (tc == null)
                 return NotFound(new { message = $"Transportation Cost with ID {id} not found." });
 
@@ -82,10 +89,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<TransportationCostDto>> Update(int id, [FromBody] TransportationCostUpdateDto dto)
         {
-            var cost = await _context.TransportationCosts
-                .Include(x => x.Type)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var cost = await _context.TransportationCosts.Include(x => x.Type).FirstOrDefaultAsync(x => x.Id == id);
             if (cost == null)
                 return NotFound(new { message = $"Transportation Cost with ID {id} not found." });
 

@@ -18,11 +18,25 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all agents</summary>
+        /// <summary>Get all agents - optional search by name, code, or nationality</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<AgentDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.Agents
+            var query = _context.Agents.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(a =>
+                    a.AgentName.ToLower().Contains(s) ||
+                    a.AgentCode.ToLower().Contains(s) ||
+                    (a.Nationality != null && a.Nationality.ToLower().Contains(s)) ||
+                    (a.Email != null && a.Email.ToLower().Contains(s)) ||
+                    (a.Phone != null && a.Phone.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(a => a.AgentName)
                 .Select(a => new AgentDto
                 {

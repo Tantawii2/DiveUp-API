@@ -18,11 +18,19 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all excursion suppliers</summary>
+        /// <summary>Get all excursion suppliers - optional search by name</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExcursionSupplierDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<ExcursionSupplierDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.ExcursionSuppliers
+            var query = _context.ExcursionSuppliers.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(x => x.SupplierName.ToLower().Contains(s));
+            }
+
+            var list = await query
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new ExcursionSupplierDto
                 {

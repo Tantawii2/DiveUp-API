@@ -18,12 +18,22 @@ namespace DiveUp.Controllers
             _context = context;
         }
 
-        /// <summary>Get all transportation types</summary>
+        /// <summary>Get all transportation types - optional search by type name or supplier</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TransportationTypeDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<TransportationTypeDto>>> GetAll([FromQuery] string? search)
         {
-            var list = await _context.TransportationTypes
-                .Include(t => t.Supplier)
+            var query = _context.TransportationTypes.Include(t => t.Supplier).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(t =>
+                    t.TypeName.ToLower().Contains(s) ||
+                    (t.Supplier != null && t.Supplier.SupplierName.ToLower().Contains(s))
+                );
+            }
+
+            var list = await query
                 .OrderBy(t => t.TypeName)
                 .Select(t => new TransportationTypeDto
                 {
@@ -43,10 +53,7 @@ namespace DiveUp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TransportationTypeDto>> GetById(int id)
         {
-            var t = await _context.TransportationTypes
-                .Include(x => x.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var t = await _context.TransportationTypes.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
             if (t == null)
                 return NotFound(new { message = $"Transportation Type with ID {id} not found." });
 
@@ -76,10 +83,7 @@ namespace DiveUp.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<TransportationTypeDto>> Update(int id, [FromBody] TransportationTypeUpdateDto dto)
         {
-            var type = await _context.TransportationTypes
-                .Include(x => x.Supplier)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var type = await _context.TransportationTypes.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
             if (type == null)
                 return NotFound(new { message = $"Transportation Type with ID {id} not found." });
 
