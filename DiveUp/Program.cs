@@ -21,12 +21,14 @@ namespace DiveUp
 
             var app = builder.Build();
 
-            // Swagger in Development
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            ///*   // Swagger in Development
+            //   if (app.Environment.IsDevelopment())
+            //   {
+            //       app.UseSwagger();
+            //       app.UseSwaggerUI();
+            //   }*/
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 
