@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DiveUp.Data;
 using DiveUp.DTOs;
@@ -68,6 +68,53 @@ namespace DiveUp.Controllers
             return Ok(ToDto(a));
         }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /// <summary>Create a new agent</summary>
         [HttpPost]
         public async Task<ActionResult<AgentDto>> Create([FromBody] AgentCreateDto dto)
@@ -95,6 +142,58 @@ namespace DiveUp.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = agent.Id }, ToDto(agent));
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         /// <summary>Update an existing agent</summary>
         [HttpPut("{id}")]
