@@ -192,20 +192,17 @@ namespace DiveUp
             // =========================
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("FrontendCors", policy =>
-                    policy
-                        .WithOrigins(
-                            "https://hassansharaf552000.github.io"
-                        // لو بتجرب محلي كمان ضيف دول:
-                        // ,"http://localhost:5173"
-                        // ,"http://localhost:3000"
-                        // ,"http://localhost:4200"
-                        )
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                // لو انت بتستخدم Cookies/Session ألغِ اللي فوق وحط:
-                // .AllowCredentials()
-                );
+              options.AddPolicy("FrontendCors", policy =>
+                 policy
+                     .WithOrigins(
+                         "https://hassansharaf552000.github.io",
+                         "http://localhost:5173",
+                         "http://localhost:3000",
+                         "http://localhost:4200" // ✅ Angular
+                     )
+                     .AllowAnyHeader()
+                     .AllowAnyMethod()
+             );
             });
 
             // =========================
