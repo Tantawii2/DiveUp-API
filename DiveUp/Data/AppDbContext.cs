@@ -11,6 +11,7 @@ namespace DiveUp.Data
         public DbSet<Boat> Boats => Set<Boat>();
         public DbSet<Excursion> Excursions => Set<Excursion>();
         public DbSet<ExcursionSupplier> ExcursionSuppliers => Set<ExcursionSupplier>();
+        public DbSet<ExcursionCostSelling> ExcursionCostSellings => Set<ExcursionCostSelling>();
         public DbSet<Guide> Guides => Set<Guide>();
         public DbSet<Hotel> Hotels => Set<Hotel>();
         public DbSet<HotelDestination> HotelDestinations => Set<HotelDestination>();
@@ -18,6 +19,7 @@ namespace DiveUp.Data
         public DbSet<PriceList> PriceLists => Set<PriceList>();
         public DbSet<Rate> Rates => Set<Rate>();
         public DbSet<Rep> Reps => Set<Rep>();
+        public DbSet<RepVoucher> RepVouchers => Set<RepVoucher>();
         public DbSet<TransportationType> TransportationTypes => Set<TransportationType>();
         public DbSet<TransportationSupplier> TransportationSuppliers => Set<TransportationSupplier>();
         public DbSet<TransportationCost> TransportationCosts => Set<TransportationCost>();
@@ -27,62 +29,79 @@ namespace DiveUp.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Agent: AgentCode must be unique
+            // Agent: AgentCode unique
+            modelBuilder.Entity<Agent>().HasIndex(a => a.AgentCode).IsUnique();
+
+            // Agent -> Nationality
             modelBuilder.Entity<Agent>()
-                .HasIndex(a => a.AgentCode)
-                .IsUnique();
+                .HasOne(a => a.Nationality).WithMany()
+                .HasForeignKey(a => a.NationalityId).OnDelete(DeleteBehavior.SetNull);
 
-            // Excursion -> ExcursionSupplier (optional FK, no cascade delete)
-            modelBuilder.Entity<Excursion>()
-                .HasOne(e => e.Supplier)
-                .WithMany()
-                .HasForeignKey(e => e.SupplierId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Hotel -> HotelDestination (optional FK)
-            modelBuilder.Entity<Hotel>()
-                .HasOne(h => h.Destination)
-                .WithMany()
-                .HasForeignKey(h => h.DestinationId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Rep -> Agent (optional FK)
+            // Rep -> Agent
             modelBuilder.Entity<Rep>()
-                .HasOne(r => r.Agent)
-                .WithMany()
-                .HasForeignKey(r => r.AgentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasOne(r => r.Agent).WithMany()
+                .HasForeignKey(r => r.AgentId).OnDelete(DeleteBehavior.SetNull);
 
-            // TransportationType -> TransportationSupplier (optional FK)
+            // Excursion -> ExcursionSupplier
+            modelBuilder.Entity<Excursion>()
+                .HasOne(e => e.Supplier).WithMany()
+                .HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.SetNull);
+
+            // Hotel -> HotelDestination
+            modelBuilder.Entity<Hotel>()
+                .HasOne(h => h.Destination).WithMany()
+                .HasForeignKey(h => h.DestinationId).OnDelete(DeleteBehavior.SetNull);
+
+            // TransportationType -> TransportationSupplier
             modelBuilder.Entity<TransportationType>()
-                .HasOne(t => t.Supplier)
-                .WithMany()
-                .HasForeignKey(t => t.SupplierId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasOne(t => t.Supplier).WithMany()
+                .HasForeignKey(t => t.SupplierId).OnDelete(DeleteBehavior.SetNull);
 
-            // TransportationCost -> TransportationType (optional FK)
+            // TransportationCost -> Supplier, CarType, Destination
             modelBuilder.Entity<TransportationCost>()
-                .HasOne(tc => tc.Type)
-                .WithMany()
-                .HasForeignKey(tc => tc.TypeId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasOne(tc => tc.Supplier).WithMany()
+                .HasForeignKey(tc => tc.SupplierId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<TransportationCost>()
+                .HasOne(tc => tc.CarType).WithMany()
+                .HasForeignKey(tc => tc.CarTypeId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<TransportationCost>()
+                .HasOne(tc => tc.Destination).WithMany()
+                .HasForeignKey(tc => tc.DestinationId).OnDelete(DeleteBehavior.SetNull);
 
-            // Voucher -> Rep (optional FK)
+            // Voucher -> Rep
             modelBuilder.Entity<Voucher>()
-                .HasOne(v => v.Rep)
-                .WithMany()
-                .HasForeignKey(v => v.RepId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasOne(v => v.Rep).WithMany()
+                .HasForeignKey(v => v.RepId).OnDelete(DeleteBehavior.SetNull);
 
-            // Rate: decimal precision
+            // RepVoucher -> Rep
+            modelBuilder.Entity<RepVoucher>()
+                .HasOne(rv => rv.Rep).WithMany()
+                .HasForeignKey(rv => rv.RepId).OnDelete(DeleteBehavior.SetNull);
+
+            // ExcursionCostSelling FKs
+            modelBuilder.Entity<ExcursionCostSelling>()
+                .HasOne(e => e.PriceList).WithMany()
+                .HasForeignKey(e => e.PriceListId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExcursionCostSelling>()
+                .HasOne(e => e.Excursion).WithMany()
+                .HasForeignKey(e => e.ExcursionId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExcursionCostSelling>()
+                .HasOne(e => e.Destination).WithMany()
+                .HasForeignKey(e => e.DestinationId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExcursionCostSelling>()
+                .HasOne(e => e.Agent).WithMany()
+                .HasForeignKey(e => e.AgentId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ExcursionCostSelling>()
+                .HasOne(e => e.Supplier).WithMany()
+                .HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.SetNull);
+
+            // Rate precision
             modelBuilder.Entity<Rate>()
-                .Property(r => r.RateValue)
-                .HasColumnType("decimal(18,4)");
+                .Property(r => r.RateValue).HasColumnType("decimal(18,4)");
 
-            // TransportationCost: decimal precision
+            // TransportationCost precision
             modelBuilder.Entity<TransportationCost>()
-                .Property(tc => tc.CostValue)
-                .HasColumnType("decimal(18,2)");
+                .Property(tc => tc.CostEGP).HasColumnType("decimal(18,2)");
         }
     }
 }

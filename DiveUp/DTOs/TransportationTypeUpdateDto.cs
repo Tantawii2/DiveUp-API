@@ -1,7 +1,1 @@
-namespace DiveUp.DTOs
-{
-    public class TransportationTypeUpdateDto : TransportationTypeCreateDto
-    {
-        // Inherits all fields from TransportationTypeCreateDto
-    }
-}
+namespace DiveUp.DTOs { public class TransportationTypeUpdateDto : TransportationTypeCreateDto { } }

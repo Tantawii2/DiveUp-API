@@ -1,7 +1,1 @@
-namespace DiveUp.DTOs
-{
-    public class VoucherUpdateDto : VoucherCreateDto
-    {
-        // Inherits all fields from VoucherCreateDto
-    }
-}
+namespace DiveUp.DTOs { public class VoucherUpdateDto : VoucherCreateDto { } }

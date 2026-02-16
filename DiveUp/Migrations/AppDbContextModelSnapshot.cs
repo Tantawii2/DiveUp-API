@@ -52,20 +52,23 @@ namespace DiveUp.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Nationality")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("NationalityId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("VatNo")
                         .HasMaxLength(50)
@@ -75,6 +78,8 @@ namespace DiveUp.Migrations
 
                     b.HasIndex("AgentCode")
                         .IsUnique();
+
+                    b.HasIndex("NationalityId");
 
                     b.ToTable("Agents");
                 });
@@ -92,20 +97,16 @@ namespace DiveUp.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int?>("Capacity")
-                        .HasColumnType("integer");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -125,12 +126,16 @@ namespace DiveUp.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("SupplierId")
                         .HasColumnType("integer");
@@ -142,6 +147,112 @@ namespace DiveUp.Migrations
                     b.ToTable("Excursions");
                 });
 
+            modelBuilder.Entity("DiveUp.Models.ExcursionCostSelling", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("CostAdlEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostAdlEUR")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostAdlGBP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostAdlUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostChdEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostChdEUR")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostChdGBP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CostChdUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ExcursionId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NationalFeeAdlEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NationalFeeAdlUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NationalFeeChdEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NationalFeeChdUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PriceListId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecordBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("RecordTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("SellingAdlEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingAdlEUR")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingAdlGBP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingAdlUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingChdEGP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingChdEUR")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingChdGBP")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SellingChdUSD")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentId");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("ExcursionId");
+
+                    b.HasIndex("PriceListId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("ExcursionCostSellings");
+                });
+
             modelBuilder.Entity("DiveUp.Models.ExcursionSupplier", b =>
                 {
                     b.Property<int>("Id")
@@ -150,17 +261,41 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("FileNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VatNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
@@ -176,24 +311,28 @@ namespace DiveUp.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("GuideName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -216,12 +355,16 @@ namespace DiveUp.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -243,12 +386,16 @@ namespace DiveUp.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -263,17 +410,21 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("NationalityName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -288,17 +439,21 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PriceListName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -315,24 +470,17 @@ namespace DiveUp.Migrations
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<DateTime>("FromDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("RateValue")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<string>("RecordBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime>("ToDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -347,15 +495,27 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int?>("AgentId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("RepName")
                         .IsRequired()
@@ -369,6 +529,41 @@ namespace DiveUp.Migrations
                     b.ToTable("Reps");
                 });
 
+            modelBuilder.Entity("DiveUp.Models.RepVoucher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CountVouchers")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FromNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecordBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("RecordTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("RepId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ToNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RepId");
+
+                    b.ToTable("RepVouchers");
+                });
+
             modelBuilder.Entity("DiveUp.Models.TransportationCost", b =>
                 {
                     b.Property<int>("Id")
@@ -377,33 +572,38 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("CostValue")
+                    b.Property<int?>("CarTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("CostEGP")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime?>("FromDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
-                    b.Property<DateTime?>("ToDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("RoundType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("TypeId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TypeId");
+                    b.HasIndex("CarTypeId");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("SupplierId");
 
                     b.ToTable("TransportationCosts");
                 });
@@ -416,17 +616,41 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("FileNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("VatNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
@@ -441,12 +665,16 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("SupplierId")
                         .HasColumnType("integer");
@@ -471,28 +699,25 @@ namespace DiveUp.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CountVouchers")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FromNumber")
+                        .HasColumnType("integer");
+
                     b.Property<string>("RecordBy")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("RecordTime")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int?>("RepId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("VoucherCount")
+                    b.Property<int>("ToNumber")
                         .HasColumnType("integer");
-
-                    b.Property<string>("VoucherFrom")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("VoucherTo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
@@ -501,12 +726,60 @@ namespace DiveUp.Migrations
                     b.ToTable("Vouchers");
                 });
 
+            modelBuilder.Entity("DiveUp.Models.Agent", b =>
+                {
+                    b.HasOne("DiveUp.Models.Nationality", "Nationality")
+                        .WithMany()
+                        .HasForeignKey("NationalityId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Nationality");
+                });
+
             modelBuilder.Entity("DiveUp.Models.Excursion", b =>
                 {
                     b.HasOne("DiveUp.Models.ExcursionSupplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("DiveUp.Models.ExcursionCostSelling", b =>
+                {
+                    b.HasOne("DiveUp.Models.Agent", "Agent")
+                        .WithMany()
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.HotelDestination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.Excursion", "Excursion")
+                        .WithMany()
+                        .HasForeignKey("ExcursionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.PriceList", "PriceList")
+                        .WithMany()
+                        .HasForeignKey("PriceListId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.ExcursionSupplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Agent");
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("Excursion");
+
+                    b.Navigation("PriceList");
 
                     b.Navigation("Supplier");
                 });
@@ -531,14 +804,38 @@ namespace DiveUp.Migrations
                     b.Navigation("Agent");
                 });
 
-            modelBuilder.Entity("DiveUp.Models.TransportationCost", b =>
+            modelBuilder.Entity("DiveUp.Models.RepVoucher", b =>
                 {
-                    b.HasOne("DiveUp.Models.TransportationType", "Type")
+                    b.HasOne("DiveUp.Models.Rep", "Rep")
                         .WithMany()
-                        .HasForeignKey("TypeId")
+                        .HasForeignKey("RepId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Type");
+                    b.Navigation("Rep");
+                });
+
+            modelBuilder.Entity("DiveUp.Models.TransportationCost", b =>
+                {
+                    b.HasOne("DiveUp.Models.TransportationType", "CarType")
+                        .WithMany()
+                        .HasForeignKey("CarTypeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.HotelDestination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("DiveUp.Models.TransportationSupplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CarType");
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("DiveUp.Models.TransportationType", b =>

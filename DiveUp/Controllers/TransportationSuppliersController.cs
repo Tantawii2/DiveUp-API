@@ -1,112 +1,40 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class TransportationSuppliersController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public TransportationSuppliersController(AppDbContext db) => _db = db;
 
-        public TransportationSuppliersController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all transportation suppliers - optional search by name</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TransportationSupplierDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.TransportationSuppliers.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(x => x.SupplierName.ToLower().Contains(s));
-            }
-
-            var list = await query
-                .OrderBy(s => s.SupplierName)
-                .Select(s => new TransportationSupplierDto
-                {
-                    Id = s.Id,
-                    SupplierName = s.SupplierName,
-                    RecordBy = s.RecordBy,
-                    RecordTime = s.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.TransportationSuppliers.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(x=>x.SupplierName.ToLower().Contains(s)); }
+            return Ok(await q.OrderBy(x=>x.SupplierName).Select(x=>ToDto(x)).ToListAsync());
         }
-
-        /// <summary>Get transportation supplier by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<TransportationSupplierDto>> GetById(int id)
-        {
-            var s = await _context.TransportationSuppliers.FindAsync(id);
-            if (s == null)
-                return NotFound(new { message = $"Transportation Supplier with ID {id} not found." });
-
-            return Ok(ToDto(s));
-        }
-
-        /// <summary>Create a new transportation supplier</summary>
+        { var x=await _db.TransportationSuppliers.FindAsync(id); return x==null?NotFound(new{message=$"TransportationSupplier {id} not found."}):Ok(ToDto(x)); }
         [HttpPost]
         public async Task<ActionResult<TransportationSupplierDto>> Create([FromBody] TransportationSupplierCreateDto dto)
         {
-            var supplier = new TransportationSupplier
-            {
-                SupplierName = dto.SupplierName,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.TransportationSuppliers.Add(supplier);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = supplier.Id }, ToDto(supplier));
+            var s=new TransportationSupplier{SupplierName=dto.SupplierName,VatNo=dto.VatNo,FileNo=dto.FileNo,Email=dto.Email,Address=dto.Address,Phone=dto.Phone,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow};
+            _db.TransportationSuppliers.Add(s); await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById),new{id=s.Id},ToDto(s));
         }
-
-        /// <summary>Update a transportation supplier</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<TransportationSupplierDto>> Update(int id, [FromBody] TransportationSupplierUpdateDto dto)
         {
-            var supplier = await _context.TransportationSuppliers.FindAsync(id);
-            if (supplier == null)
-                return NotFound(new { message = $"Transportation Supplier with ID {id} not found." });
-
-            supplier.SupplierName = dto.SupplierName;
-            supplier.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(supplier));
+            var s=await _db.TransportationSuppliers.FindAsync(id); if(s==null) return NotFound(new{message=$"TransportationSupplier {id} not found."});
+            s.SupplierName=dto.SupplierName; s.VatNo=dto.VatNo; s.FileNo=dto.FileNo; s.Email=dto.Email; s.Address=dto.Address; s.Phone=dto.Phone; s.IsActive=dto.IsActive; s.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); return Ok(ToDto(s));
         }
-
-        /// <summary>Delete a transportation supplier</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var supplier = await _context.TransportationSuppliers.FindAsync(id);
-            if (supplier == null)
-                return NotFound(new { message = $"Transportation Supplier with ID {id} not found." });
-
-            _context.TransportationSuppliers.Remove(supplier);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Transportation Supplier '{supplier.SupplierName}' deleted successfully." });
-        }
-
-        private static TransportationSupplierDto ToDto(TransportationSupplier s) => new()
-        {
-            Id = s.Id,
-            SupplierName = s.SupplierName,
-            RecordBy = s.RecordBy,
-            RecordTime = s.RecordTime
-        };
+        { var s=await _db.TransportationSuppliers.FindAsync(id); if(s==null) return NotFound(new{message=$"TransportationSupplier {id} not found."}); _db.TransportationSuppliers.Remove(s); await _db.SaveChangesAsync(); return Ok(new{message=$"'{s.SupplierName}' deleted."}); }
+        private static TransportationSupplierDto ToDto(TransportationSupplier x) => new(){Id=x.Id,SupplierName=x.SupplierName,VatNo=x.VatNo,FileNo=x.FileNo,Email=x.Email,Address=x.Address,Phone=x.Phone,IsActive=x.IsActive,RecordBy=x.RecordBy,RecordTime=x.RecordTime};
     }
 }

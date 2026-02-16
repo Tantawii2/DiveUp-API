@@ -3,13 +3,15 @@ namespace DiveUp.DTOs
     public class TransportationCostDto
     {
         public int Id { get; set; }
-        public int? TypeId { get; set; }
-        public string? TypeName { get; set; }
-        public decimal CostValue { get; set; }
-        public string Currency { get; set; } = "USD";
-        public DateTime? FromDate { get; set; }
-        public DateTime? ToDate { get; set; }
-        public string? RecordBy { get; set; }
+        public int? SupplierId { get; set; }
+        public string? SupplierName { get; set; }
+        public int? CarTypeId { get; set; }
+        public string? CarTypeName { get; set; }
+        public int? DestinationId { get; set; }
+        public string? DestinationName { get; set; }
+        public string RoundType { get; set; } = string.Empty;
+        public decimal CostEGP { get; set; }
+        public string RecordBy { get; set; } = string.Empty;
         public DateTime RecordTime { get; set; }
     }
 }

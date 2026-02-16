@@ -1,124 +1,42 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class RepsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public RepsController(AppDbContext db) => _db = db;
 
-        public RepsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all reps - optional search by name or agent name</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RepDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.Reps.Include(r => r.Agent).AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(r =>
-                    r.RepName.ToLower().Contains(s) ||
-                    (r.Agent != null && r.Agent.AgentName.ToLower().Contains(s))
-                );
-            }
-
-            var list = await query
-                .OrderBy(r => r.RepName)
-                .Select(r => new RepDto
-                {
-                    Id = r.Id,
-                    RepName = r.RepName,
-                    AgentId = r.AgentId,
-                    AgentName = r.Agent != null ? r.Agent.AgentName : null,
-                    RecordBy = r.RecordBy,
-                    RecordTime = r.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Reps.Include(r=>r.Agent).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(r=>r.RepName.ToLower().Contains(s)||(r.Agent!=null&&r.Agent.AgentName.ToLower().Contains(s))); }
+            return Ok(await q.OrderBy(r=>r.RepName).Select(r=>ToDto(r)).ToListAsync());
         }
-
-        /// <summary>Get rep by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<RepDto>> GetById(int id)
-        {
-            var r = await _context.Reps.Include(x => x.Agent).FirstOrDefaultAsync(x => x.Id == id);
-            if (r == null)
-                return NotFound(new { message = $"Rep with ID {id} not found." });
-
-            return Ok(ToDto(r));
-        }
-
-        /// <summary>Create a new rep</summary>
+        { var r=await _db.Reps.Include(x=>x.Agent).FirstOrDefaultAsync(x=>x.Id==id); return r==null?NotFound(new{message=$"Rep {id} not found."}):Ok(ToDto(r)); }
         [HttpPost]
         public async Task<ActionResult<RepDto>> Create([FromBody] RepCreateDto dto)
         {
-            var rep = new Rep
-            {
-                RepName = dto.RepName,
-                AgentId = dto.AgentId,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Reps.Add(rep);
-            await _context.SaveChangesAsync();
-            await _context.Entry(rep).Reference(x => x.Agent).LoadAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = rep.Id }, ToDto(rep));
+            var r=new Rep{RepName=dto.RepName,AgentId=dto.AgentId,Address=dto.Address,Phone=dto.Phone,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow};
+            _db.Reps.Add(r); await _db.SaveChangesAsync(); await _db.Entry(r).Reference(x=>x.Agent).LoadAsync();
+            return CreatedAtAction(nameof(GetById),new{id=r.Id},ToDto(r));
         }
-
-        /// <summary>Update a rep</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<RepDto>> Update(int id, [FromBody] RepUpdateDto dto)
         {
-            var rep = await _context.Reps.Include(x => x.Agent).FirstOrDefaultAsync(x => x.Id == id);
-            if (rep == null)
-                return NotFound(new { message = $"Rep with ID {id} not found." });
-
-            rep.RepName = dto.RepName;
-            rep.AgentId = dto.AgentId;
-            rep.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            await _context.Entry(rep).Reference(x => x.Agent).LoadAsync();
-
-            return Ok(ToDto(rep));
+            var r=await _db.Reps.Include(x=>x.Agent).FirstOrDefaultAsync(x=>x.Id==id);
+            if(r==null) return NotFound(new{message=$"Rep {id} not found."});
+            r.RepName=dto.RepName; r.AgentId=dto.AgentId; r.Address=dto.Address; r.Phone=dto.Phone; r.IsActive=dto.IsActive; r.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); await _db.Entry(r).Reference(x=>x.Agent).LoadAsync();
+            return Ok(ToDto(r));
         }
-
-        /// <summary>Delete a rep</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var rep = await _context.Reps.FindAsync(id);
-            if (rep == null)
-                return NotFound(new { message = $"Rep with ID {id} not found." });
-
-            _context.Reps.Remove(rep);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Rep '{rep.RepName}' deleted successfully." });
-        }
-
-        private static RepDto ToDto(Rep r) => new()
-        {
-            Id = r.Id,
-            RepName = r.RepName,
-            AgentId = r.AgentId,
-            AgentName = r.Agent?.AgentName,
-            RecordBy = r.RecordBy,
-            RecordTime = r.RecordTime
-        };
+        { var r=await _db.Reps.FindAsync(id); if(r==null) return NotFound(new{message=$"Rep {id} not found."}); _db.Reps.Remove(r); await _db.SaveChangesAsync(); return Ok(new{message=$"'{r.RepName}' deleted."}); }
+        private static RepDto ToDto(Rep r) => new(){Id=r.Id,RepName=r.RepName,AgentId=r.AgentId,AgentName=r.Agent?.AgentName,Address=r.Address,Phone=r.Phone,IsActive=r.IsActive,RecordBy=r.RecordBy,RecordTime=r.RecordTime};
     }
 }

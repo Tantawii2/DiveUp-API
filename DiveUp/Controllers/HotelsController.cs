@@ -1,124 +1,48 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class HotelsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public HotelsController(AppDbContext db) => _db = db;
 
-        public HotelsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all hotels - optional search by name or destination</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<HotelDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.Hotels.Include(h => h.Destination).AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(h =>
-                    h.HotelName.ToLower().Contains(s) ||
-                    (h.Destination != null && h.Destination.DestinationName.ToLower().Contains(s))
-                );
-            }
-
-            var list = await query
-                .OrderBy(h => h.HotelName)
-                .Select(h => new HotelDto
-                {
-                    Id = h.Id,
-                    HotelName = h.HotelName,
-                    DestinationId = h.DestinationId,
-                    DestinationName = h.Destination != null ? h.Destination.DestinationName : null,
-                    RecordBy = h.RecordBy,
-                    RecordTime = h.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Hotels.Include(h=>h.Destination).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(h=>h.HotelName.ToLower().Contains(s)||(h.Destination!=null&&h.Destination.DestinationName.ToLower().Contains(s))); }
+            return Ok(await q.OrderBy(h=>h.HotelName).Select(h=>ToDto(h)).ToListAsync());
         }
 
-        /// <summary>Get hotel by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<HotelDto>> GetById(int id)
-        {
-            var h = await _context.Hotels.Include(x => x.Destination).FirstOrDefaultAsync(x => x.Id == id);
-            if (h == null)
-                return NotFound(new { message = $"Hotel with ID {id} not found." });
+        { var h=await _db.Hotels.Include(x=>x.Destination).FirstOrDefaultAsync(x=>x.Id==id); return h==null?NotFound(new{message=$"Hotel {id} not found."}):Ok(ToDto(h)); }
 
-            return Ok(ToDto(h));
-        }
-
-        /// <summary>Create a new hotel</summary>
         [HttpPost]
         public async Task<ActionResult<HotelDto>> Create([FromBody] HotelCreateDto dto)
         {
-            var hotel = new Hotel
-            {
-                HotelName = dto.HotelName,
-                DestinationId = dto.DestinationId,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Hotels.Add(hotel);
-            await _context.SaveChangesAsync();
-            await _context.Entry(hotel).Reference(x => x.Destination).LoadAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = hotel.Id }, ToDto(hotel));
+            var h=new Hotel{HotelName=dto.HotelName,DestinationId=dto.DestinationId,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow};
+            _db.Hotels.Add(h); await _db.SaveChangesAsync();
+            await _db.Entry(h).Reference(x=>x.Destination).LoadAsync();
+            return CreatedAtAction(nameof(GetById),new{id=h.Id},ToDto(h));
         }
 
-        /// <summary>Update a hotel</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<HotelDto>> Update(int id, [FromBody] HotelUpdateDto dto)
         {
-            var hotel = await _context.Hotels.Include(x => x.Destination).FirstOrDefaultAsync(x => x.Id == id);
-            if (hotel == null)
-                return NotFound(new { message = $"Hotel with ID {id} not found." });
-
-            hotel.HotelName = dto.HotelName;
-            hotel.DestinationId = dto.DestinationId;
-            hotel.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            await _context.Entry(hotel).Reference(x => x.Destination).LoadAsync();
-
-            return Ok(ToDto(hotel));
+            var h=await _db.Hotels.Include(x=>x.Destination).FirstOrDefaultAsync(x=>x.Id==id);
+            if(h==null) return NotFound(new{message=$"Hotel {id} not found."});
+            h.HotelName=dto.HotelName; h.DestinationId=dto.DestinationId; h.IsActive=dto.IsActive; h.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); await _db.Entry(h).Reference(x=>x.Destination).LoadAsync();
+            return Ok(ToDto(h));
         }
 
-        /// <summary>Delete a hotel</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var hotel = await _context.Hotels.FindAsync(id);
-            if (hotel == null)
-                return NotFound(new { message = $"Hotel with ID {id} not found." });
+        { var h=await _db.Hotels.FindAsync(id); if(h==null) return NotFound(new{message=$"Hotel {id} not found."}); _db.Hotels.Remove(h); await _db.SaveChangesAsync(); return Ok(new{message=$"'{h.HotelName}' deleted."}); }
 
-            _context.Hotels.Remove(hotel);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Hotel '{hotel.HotelName}' deleted successfully." });
-        }
-
-        private static HotelDto ToDto(Hotel h) => new()
-        {
-            Id = h.Id,
-            HotelName = h.HotelName,
-            DestinationId = h.DestinationId,
-            DestinationName = h.Destination?.DestinationName,
-            RecordBy = h.RecordBy,
-            RecordTime = h.RecordTime
-        };
+        private static HotelDto ToDto(Hotel h) => new(){Id=h.Id,HotelName=h.HotelName,DestinationId=h.DestinationId,DestinationName=h.Destination?.DestinationName,IsActive=h.IsActive,RecordBy=h.RecordBy,RecordTime=h.RecordTime};
     }
 }

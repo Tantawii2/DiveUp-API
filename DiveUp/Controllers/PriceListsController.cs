@@ -1,112 +1,32 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class PriceListsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public PriceListsController(AppDbContext db) => _db = db;
 
-        public PriceListsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all price lists - optional search by name</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PriceListDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.PriceLists.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(p => p.PriceListName.ToLower().Contains(s));
-            }
-
-            var list = await query
-                .OrderBy(p => p.PriceListName)
-                .Select(p => new PriceListDto
-                {
-                    Id = p.Id,
-                    PriceListName = p.PriceListName,
-                    RecordBy = p.RecordBy,
-                    RecordTime = p.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.PriceLists.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(p=>p.PriceListName.ToLower().Contains(s)); }
+            return Ok(await q.OrderBy(p=>p.PriceListName).Select(p=>ToDto(p)).ToListAsync());
         }
-
-        /// <summary>Get price list by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<PriceListDto>> GetById(int id)
-        {
-            var p = await _context.PriceLists.FindAsync(id);
-            if (p == null)
-                return NotFound(new { message = $"Price List with ID {id} not found." });
-
-            return Ok(ToDto(p));
-        }
-
-        /// <summary>Create a new price list</summary>
+        { var p=await _db.PriceLists.FindAsync(id); return p==null?NotFound(new{message=$"PriceList {id} not found."}):Ok(ToDto(p)); }
         [HttpPost]
         public async Task<ActionResult<PriceListDto>> Create([FromBody] PriceListCreateDto dto)
-        {
-            var priceList = new PriceList
-            {
-                PriceListName = dto.PriceListName,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.PriceLists.Add(priceList);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = priceList.Id }, ToDto(priceList));
-        }
-
-        /// <summary>Update a price list</summary>
-        [HttpPut("{id}")]
+        { var p=new PriceList{PriceListName=dto.PriceListName,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow}; _db.PriceLists.Add(p); await _db.SaveChangesAsync(); return CreatedAtAction(nameof(GetById),new{id=p.Id},ToDto(p)); }
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<PriceListDto>> Update(int id, [FromBody] PriceListUpdateDto dto)
-        {
-            var priceList = await _context.PriceLists.FindAsync(id);
-            if (priceList == null)
-                return NotFound(new { message = $"Price List with ID {id} not found." });
-
-            priceList.PriceListName = dto.PriceListName;
-            priceList.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(priceList));
-        }
-
-        /// <summary>Delete a price list</summary>
-        [HttpDelete("{id}")]
+        { var p=await _db.PriceLists.FindAsync(id); if(p==null) return NotFound(new{message=$"PriceList {id} not found."}); p.PriceListName=dto.PriceListName; p.IsActive=dto.IsActive; p.RecordBy=dto.RecordBy; await _db.SaveChangesAsync(); return Ok(ToDto(p)); }
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var priceList = await _context.PriceLists.FindAsync(id);
-            if (priceList == null)
-                return NotFound(new { message = $"Price List with ID {id} not found." });
-
-            _context.PriceLists.Remove(priceList);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Price List '{priceList.PriceListName}' deleted successfully." });
-        }
-
-        private static PriceListDto ToDto(PriceList p) => new()
-        {
-            Id = p.Id,
-            PriceListName = p.PriceListName,
-            RecordBy = p.RecordBy,
-            RecordTime = p.RecordTime
-        };
+        { var p=await _db.PriceLists.FindAsync(id); if(p==null) return NotFound(new{message=$"PriceList {id} not found."}); _db.PriceLists.Remove(p); await _db.SaveChangesAsync(); return Ok(new{message=$"'{p.PriceListName}' deleted."}); }
+        private static PriceListDto ToDto(PriceList p) => new(){Id=p.Id,PriceListName=p.PriceListName,IsActive=p.IsActive,RecordBy=p.RecordBy,RecordTime=p.RecordTime};
     }
 }

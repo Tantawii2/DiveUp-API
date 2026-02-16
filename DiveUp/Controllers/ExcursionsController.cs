@@ -1,124 +1,48 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class ExcursionsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public ExcursionsController(AppDbContext db) => _db = db;
 
-        public ExcursionsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all excursions - optional search by name or supplier name</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ExcursionDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.Excursions.Include(e => e.Supplier).AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(e =>
-                    e.ExcursionName.ToLower().Contains(s) ||
-                    (e.Supplier != null && e.Supplier.SupplierName.ToLower().Contains(s))
-                );
-            }
-
-            var list = await query
-                .OrderBy(e => e.ExcursionName)
-                .Select(e => new ExcursionDto
-                {
-                    Id = e.Id,
-                    ExcursionName = e.ExcursionName,
-                    SupplierId = e.SupplierId,
-                    SupplierName = e.Supplier != null ? e.Supplier.SupplierName : null,
-                    RecordBy = e.RecordBy,
-                    RecordTime = e.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Excursions.Include(e=>e.Supplier).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(e=>e.ExcursionName.ToLower().Contains(s)); }
+            return Ok(await q.OrderBy(e=>e.ExcursionName).Select(e=>ToDto(e)).ToListAsync());
         }
 
-        /// <summary>Get excursion by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<ExcursionDto>> GetById(int id)
-        {
-            var e = await _context.Excursions.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
-            if (e == null)
-                return NotFound(new { message = $"Excursion with ID {id} not found." });
+        { var e=await _db.Excursions.Include(x=>x.Supplier).FirstOrDefaultAsync(x=>x.Id==id); return e==null?NotFound(new{message=$"Excursion {id} not found."}):Ok(ToDto(e)); }
 
-            return Ok(ToDto(e));
-        }
-
-        /// <summary>Create a new excursion</summary>
         [HttpPost]
         public async Task<ActionResult<ExcursionDto>> Create([FromBody] ExcursionCreateDto dto)
         {
-            var excursion = new Excursion
-            {
-                ExcursionName = dto.ExcursionName,
-                SupplierId = dto.SupplierId,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Excursions.Add(excursion);
-            await _context.SaveChangesAsync();
-            await _context.Entry(excursion).Reference(x => x.Supplier).LoadAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = excursion.Id }, ToDto(excursion));
+            var e=new Excursion{ExcursionName=dto.ExcursionName, SupplierId=dto.SupplierId, IsActive=dto.IsActive, RecordBy=dto.RecordBy, RecordTime=DateTime.UtcNow};
+            _db.Excursions.Add(e); await _db.SaveChangesAsync();
+            await _db.Entry(e).Reference(x=>x.Supplier).LoadAsync();
+            return CreatedAtAction(nameof(GetById),new{id=e.Id},ToDto(e));
         }
 
-        /// <summary>Update an excursion</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<ExcursionDto>> Update(int id, [FromBody] ExcursionUpdateDto dto)
         {
-            var excursion = await _context.Excursions.Include(x => x.Supplier).FirstOrDefaultAsync(x => x.Id == id);
-            if (excursion == null)
-                return NotFound(new { message = $"Excursion with ID {id} not found." });
-
-            excursion.ExcursionName = dto.ExcursionName;
-            excursion.SupplierId = dto.SupplierId;
-            excursion.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            await _context.Entry(excursion).Reference(x => x.Supplier).LoadAsync();
-
-            return Ok(ToDto(excursion));
+            var e=await _db.Excursions.Include(x=>x.Supplier).FirstOrDefaultAsync(x=>x.Id==id);
+            if(e==null) return NotFound(new{message=$"Excursion {id} not found."});
+            e.ExcursionName=dto.ExcursionName; e.SupplierId=dto.SupplierId; e.IsActive=dto.IsActive; e.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); await _db.Entry(e).Reference(x=>x.Supplier).LoadAsync();
+            return Ok(ToDto(e));
         }
 
-        /// <summary>Delete an excursion</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var excursion = await _context.Excursions.FindAsync(id);
-            if (excursion == null)
-                return NotFound(new { message = $"Excursion with ID {id} not found." });
+        { var e=await _db.Excursions.FindAsync(id); if(e==null) return NotFound(new{message=$"Excursion {id} not found."}); _db.Excursions.Remove(e); await _db.SaveChangesAsync(); return Ok(new{message=$"'{e.ExcursionName}' deleted."}); }
 
-            _context.Excursions.Remove(excursion);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Excursion '{excursion.ExcursionName}' deleted successfully." });
-        }
-
-        private static ExcursionDto ToDto(Excursion e) => new()
-        {
-            Id = e.Id,
-            ExcursionName = e.ExcursionName,
-            SupplierId = e.SupplierId,
-            SupplierName = e.Supplier?.SupplierName,
-            RecordBy = e.RecordBy,
-            RecordTime = e.RecordTime
-        };
+        private static ExcursionDto ToDto(Excursion e) => new(){Id=e.Id,ExcursionName=e.ExcursionName,SupplierId=e.SupplierId,SupplierName=e.Supplier?.SupplierName,IsActive=e.IsActive,RecordBy=e.RecordBy,RecordTime=e.RecordTime};
     }
 }

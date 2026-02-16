@@ -1,124 +1,41 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class RatesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public RatesController(AppDbContext db) => _db = db;
 
-        public RatesController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all rates - optional search by currency</summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RateDto>>> GetAll([FromQuery] string? search)
+        public async Task<ActionResult<IEnumerable<RateDto>>> GetAll([FromQuery] string? currency)
         {
-            var query = _context.Rates.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(r => r.Currency.ToLower().Contains(s));
-            }
-
-            var list = await query
-                .OrderByDescending(r => r.FromDate)
-                .Select(r => new RateDto
-                {
-                    Id = r.Id,
-                    FromDate = r.FromDate,
-                    ToDate = r.ToDate,
-                    Currency = r.Currency,
-                    RateValue = r.RateValue,
-                    RecordBy = r.RecordBy,
-                    RecordTime = r.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Rates.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(currency)) q=q.Where(r=>r.Currency.ToLower()==currency.Trim().ToLower());
+            return Ok(await q.OrderByDescending(r=>r.FromDate).Select(r=>ToDto(r)).ToListAsync());
         }
-
-        /// <summary>Get rate by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<RateDto>> GetById(int id)
-        {
-            var r = await _context.Rates.FindAsync(id);
-            if (r == null)
-                return NotFound(new { message = $"Rate with ID {id} not found." });
-
-            return Ok(ToDto(r));
-        }
-
-        /// <summary>Create a new rate</summary>
+        { var r=await _db.Rates.FindAsync(id); return r==null?NotFound(new{message=$"Rate {id} not found."}):Ok(ToDto(r)); }
         [HttpPost]
         public async Task<ActionResult<RateDto>> Create([FromBody] RateCreateDto dto)
         {
-            var rate = new Rate
-            {
-                FromDate = dto.FromDate,
-                ToDate = dto.ToDate,
-                Currency = dto.Currency,
-                RateValue = dto.RateValue,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Rates.Add(rate);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = rate.Id }, ToDto(rate));
+            if(dto.ToDate < dto.FromDate) return BadRequest(new{message="ToDate must be >= FromDate."});
+            var r=new Rate{FromDate=dto.FromDate,ToDate=dto.ToDate,Currency=dto.Currency,RateValue=dto.RateValue};
+            _db.Rates.Add(r); await _db.SaveChangesAsync(); return CreatedAtAction(nameof(GetById),new{id=r.Id},ToDto(r));
         }
-
-        /// <summary>Update a rate</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<RateDto>> Update(int id, [FromBody] RateUpdateDto dto)
         {
-            var rate = await _context.Rates.FindAsync(id);
-            if (rate == null)
-                return NotFound(new { message = $"Rate with ID {id} not found." });
-
-            rate.FromDate = dto.FromDate;
-            rate.ToDate = dto.ToDate;
-            rate.Currency = dto.Currency;
-            rate.RateValue = dto.RateValue;
-            rate.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(rate));
+            if(dto.ToDate < dto.FromDate) return BadRequest(new{message="ToDate must be >= FromDate."});
+            var r=await _db.Rates.FindAsync(id); if(r==null) return NotFound(new{message=$"Rate {id} not found."});
+            r.FromDate=dto.FromDate; r.ToDate=dto.ToDate; r.Currency=dto.Currency; r.RateValue=dto.RateValue;
+            await _db.SaveChangesAsync(); return Ok(ToDto(r));
         }
-
-        /// <summary>Delete a rate</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var rate = await _context.Rates.FindAsync(id);
-            if (rate == null)
-                return NotFound(new { message = $"Rate with ID {id} not found." });
-
-            _context.Rates.Remove(rate);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Rate deleted successfully." });
-        }
-
-        private static RateDto ToDto(Rate r) => new()
-        {
-            Id = r.Id,
-            FromDate = r.FromDate,
-            ToDate = r.ToDate,
-            Currency = r.Currency,
-            RateValue = r.RateValue,
-            RecordBy = r.RecordBy,
-            RecordTime = r.RecordTime
-        };
+        { var r=await _db.Rates.FindAsync(id); if(r==null) return NotFound(new{message=$"Rate {id} not found."}); _db.Rates.Remove(r); await _db.SaveChangesAsync(); return Ok(new{message="Rate deleted."}); }
+        private static RateDto ToDto(Rate r) => new(){Id=r.Id,FromDate=r.FromDate,ToDate=r.ToDate,Currency=r.Currency,RateValue=r.RateValue};
     }
 }

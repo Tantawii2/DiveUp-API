@@ -1,124 +1,46 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class GuidesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public GuidesController(AppDbContext db) => _db = db;
 
-        public GuidesController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all guides - optional search by name, phone, or address</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GuideDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.Guides.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(g =>
-                    g.GuideName.ToLower().Contains(s) ||
-                    (g.Phone != null && g.Phone.ToLower().Contains(s)) ||
-                    (g.Address != null && g.Address.ToLower().Contains(s))
-                );
-            }
-
-            var list = await query
-                .OrderBy(g => g.GuideName)
-                .Select(g => new GuideDto
-                {
-                    Id = g.Id,
-                    GuideName = g.GuideName,
-                    Address = g.Address,
-                    Phone = g.Phone,
-                    RecordBy = g.RecordBy,
-                    RecordTime = g.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Guides.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(g=>g.GuideName.ToLower().Contains(s)||(g.Phone!=null&&g.Phone.ToLower().Contains(s))); }
+            return Ok(await q.OrderBy(g=>g.GuideName).Select(g=>ToDto(g)).ToListAsync());
         }
 
-        /// <summary>Get guide by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<GuideDto>> GetById(int id)
-        {
-            var g = await _context.Guides.FindAsync(id);
-            if (g == null)
-                return NotFound(new { message = $"Guide with ID {id} not found." });
+        { var g=await _db.Guides.FindAsync(id); return g==null?NotFound(new{message=$"Guide {id} not found."}):Ok(ToDto(g)); }
 
-            return Ok(ToDto(g));
-        }
-
-        /// <summary>Create a new guide</summary>
         [HttpPost]
         public async Task<ActionResult<GuideDto>> Create([FromBody] GuideCreateDto dto)
         {
-            var guide = new Guide
-            {
-                GuideName = dto.GuideName,
-                Address = dto.Address,
-                Phone = dto.Phone,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Guides.Add(guide);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = guide.Id }, ToDto(guide));
+            var g=new Guide{GuideName=dto.GuideName,Address=dto.Address,Phone=dto.Phone,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow};
+            _db.Guides.Add(g); await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById),new{id=g.Id},ToDto(g));
         }
 
-        /// <summary>Update a guide</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<GuideDto>> Update(int id, [FromBody] GuideUpdateDto dto)
         {
-            var guide = await _context.Guides.FindAsync(id);
-            if (guide == null)
-                return NotFound(new { message = $"Guide with ID {id} not found." });
-
-            guide.GuideName = dto.GuideName;
-            guide.Address = dto.Address;
-            guide.Phone = dto.Phone;
-            guide.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(guide));
+            var g=await _db.Guides.FindAsync(id);
+            if(g==null) return NotFound(new{message=$"Guide {id} not found."});
+            g.GuideName=dto.GuideName; g.Address=dto.Address; g.Phone=dto.Phone; g.IsActive=dto.IsActive; g.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); return Ok(ToDto(g));
         }
 
-        /// <summary>Delete a guide</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var guide = await _context.Guides.FindAsync(id);
-            if (guide == null)
-                return NotFound(new { message = $"Guide with ID {id} not found." });
+        { var g=await _db.Guides.FindAsync(id); if(g==null) return NotFound(new{message=$"Guide {id} not found."}); _db.Guides.Remove(g); await _db.SaveChangesAsync(); return Ok(new{message=$"'{g.GuideName}' deleted."}); }
 
-            _context.Guides.Remove(guide);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Guide '{guide.GuideName}' deleted successfully." });
-        }
-
-        private static GuideDto ToDto(Guide g) => new()
-        {
-            Id = g.Id,
-            GuideName = g.GuideName,
-            Address = g.Address,
-            Phone = g.Phone,
-            RecordBy = g.RecordBy,
-            RecordTime = g.RecordTime
-        };
+        private static GuideDto ToDto(Guide g) => new(){Id=g.Id,GuideName=g.GuideName,Address=g.Address,Phone=g.Phone,IsActive=g.IsActive,RecordBy=g.RecordBy,RecordTime=g.RecordTime};
     }
 }

@@ -4,9 +4,8 @@ namespace DiveUp.DTOs
     {
         public int Id { get; set; }
         public string BoatName { get; set; } = string.Empty;
-        public int? Capacity { get; set; }
-        public string Status { get; set; } = "Active";
-        public string? RecordBy { get; set; }
+        public bool IsActive { get; set; }
+        public string RecordBy { get; set; } = string.Empty;
         public DateTime RecordTime { get; set; }
     }
 }

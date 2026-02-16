@@ -1,7 +1,1 @@
-namespace DiveUp.DTOs
-{
-    public class HotelDestinationUpdateDto : HotelDestinationCreateDto
-    {
-        // Inherits all fields from HotelDestinationCreateDto
-    }
-}
+namespace DiveUp.DTOs { public class HotelDestinationUpdateDto : HotelDestinationCreateDto { } }

@@ -11,113 +11,50 @@ namespace DiveUp.Controllers
     [Produces("application/json")]
     public class BoatsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public BoatsController(AppDbContext db) => _db = db;
 
-        public BoatsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all boats - optional search by name or status</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BoatDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.Boats.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(b =>
-                    b.BoatName.ToLower().Contains(s) ||
-                    b.Status.ToLower().Contains(s)
-                );
-            }
-
-            var list = await query
-                .OrderBy(b => b.BoatName)
-                .Select(b => new BoatDto
-                {
-                    Id = b.Id,
-                    BoatName = b.BoatName,
-                    Capacity = b.Capacity,
-                    Status = b.Status,
-                    RecordBy = b.RecordBy,
-                    RecordTime = b.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.Boats.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s = search.Trim().ToLower(); q = q.Where(b => b.BoatName.ToLower().Contains(s)); }
+            return Ok(await q.OrderBy(b => b.BoatName).Select(b => ToDto(b)).ToListAsync());
         }
 
-        /// <summary>Get boat by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<BoatDto>> GetById(int id)
         {
-            var b = await _context.Boats.FindAsync(id);
-            if (b == null)
-                return NotFound(new { message = $"Boat with ID {id} not found." });
-
-            return Ok(ToDto(b));
+            var b = await _db.Boats.FindAsync(id);
+            return b == null ? NotFound(new { message = $"Boat {id} not found." }) : Ok(ToDto(b));
         }
 
-        /// <summary>Create a new boat</summary>
         [HttpPost]
         public async Task<ActionResult<BoatDto>> Create([FromBody] BoatCreateDto dto)
         {
-            var boat = new Boat
-            {
-                BoatName = dto.BoatName,
-                Capacity = dto.Capacity,
-                Status = dto.Status,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.Boats.Add(boat);
-            await _context.SaveChangesAsync();
-
+            var boat = new Boat { BoatName=dto.BoatName, IsActive=dto.IsActive, RecordBy=dto.RecordBy, RecordTime=DateTime.UtcNow };
+            _db.Boats.Add(boat); await _db.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = boat.Id }, ToDto(boat));
         }
 
-        /// <summary>Update a boat</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<BoatDto>> Update(int id, [FromBody] BoatUpdateDto dto)
         {
-            var boat = await _context.Boats.FindAsync(id);
-            if (boat == null)
-                return NotFound(new { message = $"Boat with ID {id} not found." });
-
-            boat.BoatName = dto.BoatName;
-            boat.Capacity = dto.Capacity;
-            boat.Status = dto.Status;
-            boat.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(boat));
+            var boat = await _db.Boats.FindAsync(id);
+            if (boat == null) return NotFound(new { message = $"Boat {id} not found." });
+            boat.BoatName=dto.BoatName; boat.IsActive=dto.IsActive; boat.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); return Ok(ToDto(boat));
         }
 
-        /// <summary>Delete a boat</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var boat = await _context.Boats.FindAsync(id);
-            if (boat == null)
-                return NotFound(new { message = $"Boat with ID {id} not found." });
-
-            _context.Boats.Remove(boat);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Boat '{boat.BoatName}' deleted successfully." });
+            var boat = await _db.Boats.FindAsync(id);
+            if (boat == null) return NotFound(new { message = $"Boat {id} not found." });
+            _db.Boats.Remove(boat); await _db.SaveChangesAsync();
+            return Ok(new { message = $"Boat '{boat.BoatName}' deleted." });
         }
 
-        private static BoatDto ToDto(Boat b) => new()
-        {
-            Id = b.Id,
-            BoatName = b.BoatName,
-            Capacity = b.Capacity,
-            Status = b.Status,
-            RecordBy = b.RecordBy,
-            RecordTime = b.RecordTime
-        };
+        private static BoatDto ToDto(Boat b) => new() { Id=b.Id, BoatName=b.BoatName, IsActive=b.IsActive, RecordBy=b.RecordBy, RecordTime=b.RecordTime };
     }
 }

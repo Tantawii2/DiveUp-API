@@ -1,112 +1,46 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using DiveUp.Data;
-using DiveUp.DTOs;
-using DiveUp.Models;
-
+using Microsoft.AspNetCore.Mvc; using Microsoft.EntityFrameworkCore;
+using DiveUp.Data; using DiveUp.DTOs; using DiveUp.Models;
 namespace DiveUp.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Produces("application/json")]
+    [ApiController][Route("api/[controller]")][Produces("application/json")]
     public class HotelDestinationsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
+        public HotelDestinationsController(AppDbContext db) => _db = db;
 
-        public HotelDestinationsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        /// <summary>Get all hotel destinations - optional search by name</summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<HotelDestinationDto>>> GetAll([FromQuery] string? search)
         {
-            var query = _context.HotelDestinations.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var s = search.Trim().ToLower();
-                query = query.Where(d => d.DestinationName.ToLower().Contains(s));
-            }
-
-            var list = await query
-                .OrderBy(d => d.DestinationName)
-                .Select(d => new HotelDestinationDto
-                {
-                    Id = d.Id,
-                    DestinationName = d.DestinationName,
-                    RecordBy = d.RecordBy,
-                    RecordTime = d.RecordTime
-                })
-                .ToListAsync();
-
-            return Ok(list);
+            var q = _db.HotelDestinations.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) { var s=search.Trim().ToLower(); q=q.Where(d=>d.DestinationName.ToLower().Contains(s)); }
+            return Ok(await q.OrderBy(d=>d.DestinationName).Select(d=>ToDto(d)).ToListAsync());
         }
 
-        /// <summary>Get hotel destination by ID</summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<HotelDestinationDto>> GetById(int id)
-        {
-            var d = await _context.HotelDestinations.FindAsync(id);
-            if (d == null)
-                return NotFound(new { message = $"Hotel Destination with ID {id} not found." });
+        { var d=await _db.HotelDestinations.FindAsync(id); return d==null?NotFound(new{message=$"HotelDestination {id} not found."}):Ok(ToDto(d)); }
 
-            return Ok(ToDto(d));
-        }
-
-        /// <summary>Create a new hotel destination</summary>
         [HttpPost]
         public async Task<ActionResult<HotelDestinationDto>> Create([FromBody] HotelDestinationCreateDto dto)
         {
-            var dest = new HotelDestination
-            {
-                DestinationName = dto.DestinationName,
-                RecordBy = dto.RecordBy,
-                RecordTime = DateTime.Now
-            };
-
-            _context.HotelDestinations.Add(dest);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = dest.Id }, ToDto(dest));
+            var d=new HotelDestination{DestinationName=dto.DestinationName,IsActive=dto.IsActive,RecordBy=dto.RecordBy,RecordTime=DateTime.UtcNow};
+            _db.HotelDestinations.Add(d); await _db.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById),new{id=d.Id},ToDto(d));
         }
 
-        /// <summary>Update a hotel destination</summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<ActionResult<HotelDestinationDto>> Update(int id, [FromBody] HotelDestinationUpdateDto dto)
         {
-            var dest = await _context.HotelDestinations.FindAsync(id);
-            if (dest == null)
-                return NotFound(new { message = $"Hotel Destination with ID {id} not found." });
-
-            dest.DestinationName = dto.DestinationName;
-            dest.RecordBy = dto.RecordBy;
-
-            await _context.SaveChangesAsync();
-            return Ok(ToDto(dest));
+            var d=await _db.HotelDestinations.FindAsync(id);
+            if(d==null) return NotFound(new{message=$"HotelDestination {id} not found."});
+            d.DestinationName=dto.DestinationName; d.IsActive=dto.IsActive; d.RecordBy=dto.RecordBy;
+            await _db.SaveChangesAsync(); return Ok(ToDto(d));
         }
 
-        /// <summary>Delete a hotel destination</summary>
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            var dest = await _context.HotelDestinations.FindAsync(id);
-            if (dest == null)
-                return NotFound(new { message = $"Hotel Destination with ID {id} not found." });
+        { var d=await _db.HotelDestinations.FindAsync(id); if(d==null) return NotFound(new{message=$"HotelDestination {id} not found."}); _db.HotelDestinations.Remove(d); await _db.SaveChangesAsync(); return Ok(new{message=$"'{d.DestinationName}' deleted."}); }
 
-            _context.HotelDestinations.Remove(dest);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = $"Hotel Destination '{dest.DestinationName}' deleted successfully." });
-        }
-
-        private static HotelDestinationDto ToDto(HotelDestination d) => new()
-        {
-            Id = d.Id,
-            DestinationName = d.DestinationName,
-            RecordBy = d.RecordBy,
-            RecordTime = d.RecordTime
-        };
+        private static HotelDestinationDto ToDto(HotelDestination d) => new(){Id=d.Id,DestinationName=d.DestinationName,IsActive=d.IsActive,RecordBy=d.RecordBy,RecordTime=d.RecordTime};
     }
 }

@@ -1,4 +1,4 @@
-﻿//using DiveUp.Data;
+﻿///*using DiveUp.Data;
 //using Microsoft.EntityFrameworkCore;
 //using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +16,7 @@
 //            // Swagger / OpenAPI
 //            builder.Services.AddEndpointsApiExplorer();
 //            builder.Services.AddSwaggerGen();
-//            /*
+//            *//*
 //                        builder.Services.AddDbContext<AppDbContext>(options =>
 //                            options.UseSqlServer(builder.Configuration.GetConnectionString("DiveUp")));*/
 
@@ -28,7 +28,7 @@
 //                     builder.Configuration["DATABASE_URL"];
 
 //                        builder.Services.AddDbContext<AppDbContext>(options =>
-//                            options.UseNpgsql(connStr));*/
+//                            options.UseNpgsql(connStr));*//*
 
 //            var conn =
 //    builder.Configuration.GetConnectionString("DiveUp")
@@ -73,7 +73,6 @@
 //        }
 //    }
 //}
-
 
 //using DiveUp.Data;
 //using Microsoft.EntityFrameworkCore;
