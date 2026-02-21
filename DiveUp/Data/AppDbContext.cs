@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using DiveUp.Models.SystemOperation.Codes.Functions;
+using DiveUp.Models;
 
 namespace DiveUp.Data
 {
