@@ -6,7 +6,7 @@ namespace DiveUp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class CodesController : ControllerBase
+    public class OperationCodesController : ControllerBase
     {
         /// <summary>Returns the list of all code menu items (names only)</summary>
         [HttpGet]

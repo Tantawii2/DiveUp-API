@@ -7,10 +7,10 @@ using DiveUp.DTOs;
 namespace DiveUp.Controllers
 {
     [ApiController][Route("api/[controller]")][Produces("application/json")]
-    public class RatesController : ControllerBase
+    public class OperationRatesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public RatesController(AppDbContext db) => _db = db;
+        public OperationRatesController(AppDbContext db) => _db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RateDto>>> GetAll([FromQuery] string? currency)

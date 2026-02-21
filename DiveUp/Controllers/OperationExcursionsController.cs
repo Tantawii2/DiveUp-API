@@ -7,10 +7,10 @@ using DiveUp.DTOs;
 namespace DiveUp.Controllers
 {
     [ApiController][Route("api/[controller]")][Produces("application/json")]
-    public class ExcursionsController : ControllerBase
+    public class OperationExcursionsController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public ExcursionsController(AppDbContext db) => _db = db;
+        public OperationExcursionsController(AppDbContext db) => _db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ExcursionDto>>> GetAll([FromQuery] string? search)

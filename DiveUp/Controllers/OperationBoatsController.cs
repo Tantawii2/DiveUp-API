@@ -9,10 +9,10 @@ namespace DiveUp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class BoatsController : ControllerBase
+    public class OperationBoatsController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public BoatsController(AppDbContext db) => _db = db;
+        public OperationBoatsController(AppDbContext db) => _db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BoatDto>>> GetAll([FromQuery] string? search)

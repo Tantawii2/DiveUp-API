@@ -7,10 +7,10 @@ using DiveUp.DTOs;
 namespace DiveUp.Controllers
 {
     [ApiController][Route("api/[controller]")][Produces("application/json")]
-    public class NationalitiesController : ControllerBase
+    public class OperationNationalitiesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public NationalitiesController(AppDbContext db) => _db = db;
+        public OperationNationalitiesController(AppDbContext db) => _db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<NationalityDto>>> GetAll([FromQuery] string? search)

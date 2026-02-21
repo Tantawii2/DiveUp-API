@@ -7,10 +7,10 @@ using DiveUp.DTOs;
 namespace DiveUp.Controllers
 {
     [ApiController][Route("api/[controller]")][Produces("application/json")]
-    public class ExcursionCostSellingsController : ControllerBase
+    public class OperationExcursionCostSellingsController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public ExcursionCostSellingsController(AppDbContext db) => _db = db;
+        public OperationExcursionCostSellingsController(AppDbContext db) => _db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ExcursionCostSellingDto>>> GetAll(
